@@ -42,30 +42,29 @@ ac_state ac_build(char* P, int m) {
     ac_state state = malloc(sizeof(struct ac_state_t));
     state->root = malloc(sizeof(struct trie_t));
     state->root->child = malloc(sizeof(struct trie_t));
+    state->root->P = P[0];
     trie automata = state->root->child;
-    for (i = 0; i < m; i++) {
+    for (i = 1; i < m; i++) {
         automata->P = P[i];
-        automata->end = (i == m - 1);
-        if (!automata->end) {
-            automata->child = malloc(sizeof(struct trie_t));
-            automata = automata->child;
-        } else {
-            automata->output = malloc(sizeof(char) * m);
-            strcpy(automata->output, P);
-            automata->m = m;
-        }
+        automata->end = 0;
+        automata->child = malloc(sizeof(struct trie_t));
+        automata = automata->child;
     }
+    automata->end = 1;
+    automata->output = malloc(sizeof(char) * m);
+    strcpy(automata->output, P);
+    automata->m = m;
     automata = state->root;
     state->root->child->failure = state->root;
     trie failure = state->root->child->child;
+    i = 1;
     while (!failure->end) {
-        while ((automata != state->root) && (failure->P != automata->child->P)) automata = automata->failure;
-        if (failure->P == automata->child->P) automata = automata->child;
+        while ((automata != state->root) && (P[i] != automata->P)) automata = automata->failure;
+        if (P[i] == automata->P) automata = automata->child;
         failure->failure = automata;
         failure = failure->child;
+        i++;
     }
-    while ((automata != state->root) && (failure->P != automata->child->P)) automata = automata->failure;
-    if (failure->P == automata->child->P) automata = automata->child;
     failure->failure = automata;
     state->automata = state->root;
     return state;
@@ -74,8 +73,8 @@ ac_state ac_build(char* P, int m) {
 void ac_stream(ac_state state, char T_j, int j, ac_result result) {
     result->j = -1;
     trie automata = state->automata;
-    while ((automata != state->root) && (automata->child->P != T_j)) automata = automata->failure;
-    if (automata->child->P == T_j) automata = automata->child;
+    while ((automata != state->root) && (automata->P != T_j)) automata = automata->failure;
+    if (automata->P == T_j) automata = automata->child;
     if (automata->end) {
         result->j = j;
         result->output = realloc(result->output, sizeof(char) * automata->m);
