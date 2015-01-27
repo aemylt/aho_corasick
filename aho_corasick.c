@@ -16,16 +16,17 @@ void stream_test(char* T, int n, char* P, int m, int* correct) {
 }
 
 int main(void) {
-    int n = 18, m = 5;
-    int correct_matches = 2;
-    int* correct = malloc(correct_matches * sizeof(int));
+    int n = 30, m = 5;
+    int* correct = malloc(n * sizeof(int));
     correct[0] = 8; correct[1] = 13;
     int* output = malloc(100 * sizeof(int));
     correct = realloc(correct, n * sizeof(int));
     correct[0]  = -1; correct[1]  = -1; correct[2]  = -1; correct[3]  = -1; correct[4]  = -1; correct[5]  = -1;
     correct[6]  = -1; correct[7]  = -1; correct[8]  = -1; correct[9]  = -1; correct[10] = -1; correct[11] = -1;
     correct[12] = 12; correct[13] = -1; correct[14] = -1; correct[15] = -1; correct[16] = -1; correct[17] = 17;
-    stream_test("ababaabbababbababb", n, "ababb", m, correct);
+    correct[18] = -1; correct[19] = -1; correct[20] = -1; correct[21] = -1; correct[22] = -1; correct[23] = -1;
+    correct[24] = -1; correct[25] = -1; correct[26] = -1; correct[27] = -1; correct[28] = -1; correct[29] = 29;
+    stream_test("ababaabbababbababbaaababaababb", n, "ababb", m, correct);
     free(correct);
     free(output);
     printf("All tests succeeded!\n");
