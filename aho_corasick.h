@@ -7,13 +7,12 @@ typedef struct trie_t {
     struct trie_t *child;
     struct trie_t *failure;
     char P;
-    int end;
     char *output;
     int m;
 } *trie;
 
 void trie_free(trie automata) {
-    if (!automata->end) trie_free(automata->child);
+    if (!automata->m) trie_free(automata->child);
     else free(automata->output);
     free(automata);
 }
@@ -46,11 +45,10 @@ ac_state ac_build(char* P, int m) {
     trie automata = state->root->child;
     for (i = 1; i < m; i++) {
         automata->P = P[i];
-        automata->end = 0;
+        automata->m = 0;
         automata->child = malloc(sizeof(struct trie_t));
         automata = automata->child;
     }
-    automata->end = 1;
     automata->output = malloc(sizeof(char) * m);
     strcpy(automata->output, P);
     automata->m = m;
@@ -58,7 +56,7 @@ ac_state ac_build(char* P, int m) {
     state->root->child->failure = state->root;
     trie failure = state->root->child->child;
     i = 1;
-    while (!failure->end) {
+    while (!failure->m) {
         while ((automata != state->root) && (P[i] != automata->P)) automata = automata->failure;
         if (P[i] == automata->P) automata = automata->child;
         failure->failure = automata;
@@ -75,7 +73,7 @@ void ac_stream(ac_state state, char T_j, int j, ac_result result) {
     trie automata = state->automata;
     while ((automata != state->root) && (automata->P != T_j)) automata = automata->failure;
     if (automata->P == T_j) automata = automata->child;
-    if (automata->end) {
+    if (automata->m) {
         result->j = j;
         result->output = realloc(result->output, sizeof(char) * automata->m);
         strcpy(result->output, automata->output);
