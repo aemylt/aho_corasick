@@ -5,9 +5,14 @@
 
 void stream_test(char* T, int n, char* P, int m, int* correct) {
     ac_state state = ac_build(P, m);
+    ac_result result = ac_result_build();
     int j;
-    for (j = 0; j < n; j++) assert(correct[j] == ac_stream(state, T[j], j));
+    for (j = 0; j < n; j++) {
+        ac_stream(state, T[j], j, result);
+        assert(correct[j] == result->j);
+    }
     ac_free(state);
+    ac_result_free(result);
 }
 
 int main(void) {
