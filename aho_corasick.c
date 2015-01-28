@@ -4,7 +4,7 @@
 #include <assert.h>
 
 void stream_test(char *T, int n, char *P, int m, int *correct) {
-    ac_state state = ac_build(P, m);
+    ac_state state = ac_build(&P, &m, 1);
     ac_result result = ac_result_build();
     int j;
     for (j = 0; j < n; j++) {

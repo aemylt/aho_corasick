@@ -8,8 +8,9 @@ typedef struct trie_t {
     char *child_keys;
     int children;
     struct trie_t *failure;
-    char *output;
-    int m;
+    char **output;
+    int *m;
+    int num_matches;
 } *trie;
 
 trie get_child(trie automata, char key) {
@@ -21,16 +22,25 @@ trie get_child(trie automata, char key) {
 }
 
 void trie_free(trie automata) {
-    if (!automata->m) {
+    int i;
+    if (automata->children) {
         free(automata->child_keys);
-        trie_free(automata->child);
+        for (i = 0; i < automata->children; i++) trie_free(&automata->child[i]);
     }
-    else free(automata->output);
+    if (automata->num_matches) {
+        for (i = 0; i < automata->num_matches; i++) {
+            free(automata->output[i]);
+        }
+        free(automata->output);
+        free(automata->m);
+    }
     free(automata);
 }
 
 typedef struct ac_result_t {
-    char *output;
+    char **output;
+    int *m;
+    int num_matches;
     int j;
 } *ac_result;
 
@@ -48,36 +58,47 @@ typedef struct ac_state_t {
     trie automata;
 } *ac_state;
 
-ac_state ac_build(char *P, int m) {
-    int i;
+ac_state ac_build(char **P, int *m, int num_patterns) {
+    int i, j;
     ac_state state = malloc(sizeof(struct ac_state_t));
     state->root = malloc(sizeof(struct trie_t));
-    state->root->child = malloc(sizeof(struct trie_t));
-    state->root->child_keys = malloc(sizeof(char));
-    state->root->child_keys[0] = P[0];
-    state->root->children = 1;
-    trie automata = state->root->child;
-    for (i = 1; i < m; i++) {
-        automata->child_keys = malloc(sizeof(char));
-        automata->child_keys[0] = P[i];
-        automata->children = 1;
-        automata->m = 0;
-        automata->child = malloc(sizeof(struct trie_t));
-        automata = automata->child;
+    trie automata = state->root;
+    trie has_child;
+    for (j = 0; j < num_patterns; j++) {
+        i = 0;
+        while (i < m[j]) {
+            has_child = get_child(automata, P[j][i]);
+            if (has_child) {
+                i++;
+                automata = has_child;
+            } else {
+                break;
+            }
+        }
+        while (i < m[j]) {
+            automata->children += 1;
+            automata->child_keys = realloc(automata->child_keys, sizeof(char) * automata->children);
+            automata->child_keys[automata->children - 1] = P[j][i++];
+            automata->child = realloc(automata->child, sizeof(struct trie_t) * automata->children);
+            automata = &automata->child[automata->children - 1];
+        }
+        automata->num_matches = 1;
+        automata->output = malloc(sizeof(char*));
+        automata->output[0] = malloc(sizeof(char) * m[j]);
+        strcpy(automata->output[0], P[j]);
+        automata->m = malloc(sizeof(int));
+        automata->m[0] = m[j];
+        automata = state->root;
     }
-    automata->output = malloc(sizeof(char) * m);
-    strcpy(automata->output, P);
-    automata->m = m;
-    automata = state->root;
     state->root->child->failure = state->root;
     trie failure = state->root->child->child;
     trie next;
     i = 1;
-    while (!failure->m) {
-        next = get_child(automata, P[i]);
+    while (!failure->num_matches) {
+        next = get_child(automata, P[0][i]);
         while ((automata != state->root) && (!next)){ 
             automata = automata->failure;
-            next = get_child(automata, P[i]);
+            next = get_child(automata, P[0][i]);
         }
         if (next) automata = next;
         failure->failure = automata;
@@ -98,10 +119,17 @@ void ac_stream(ac_state state, char T_j, int j, ac_result result) {
         next = get_child(automata, T_j);
     }
     if (next) automata = next;
-    if (automata->m) {
+    if (automata->num_matches) {
         result->j = j;
-        result->output = realloc(result->output, sizeof(char) * automata->m);
-        strcpy(result->output, automata->output);
+        result->num_matches = automata->num_matches;
+        result->output = realloc(result->output, sizeof(char*) * result->num_matches);
+        result->m = realloc(result->m, sizeof(int) * result->num_matches);
+        int i;
+        for (i = 0; i < result->num_matches; i++) {
+            result->m[i] = automata->m[i];
+            result->output[i] = realloc(result->output[i], sizeof(char) * result->m[i]);
+            strcpy(result->output[i], automata->output[i]);
+        }
         automata = automata->failure;
     }
     state->automata = automata;
