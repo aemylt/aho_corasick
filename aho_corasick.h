@@ -48,7 +48,7 @@ typedef struct ac_state_t {
     trie automata;
 } *ac_state;
 
-ac_state ac_build(char* P, int m) {
+ac_state ac_build(char *P, int m) {
     int i;
     ac_state state = malloc(sizeof(struct ac_state_t));
     state->root = malloc(sizeof(struct trie_t));

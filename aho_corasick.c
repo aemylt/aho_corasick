@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void stream_test(char* T, int n, char* P, int m, int* correct) {
+void stream_test(char *T, int n, char *P, int m, int *correct) {
     ac_state state = ac_build(P, m);
     ac_result result = ac_result_build();
     int j;
@@ -17,9 +17,9 @@ void stream_test(char* T, int n, char* P, int m, int* correct) {
 
 int main(void) {
     int n = 30, m = 5;
-    int* correct = malloc(n * sizeof(int));
+    int *correct = malloc(n * sizeof(int));
     correct[0] = 8; correct[1] = 13;
-    int* output = malloc(100 * sizeof(int));
+    int *output = malloc(100 * sizeof(int));
     correct = realloc(correct, n * sizeof(int));
     correct[0]  = -1; correct[1]  = -1; correct[2]  = -1; correct[3]  = -1; correct[4]  = -1; correct[5]  = -1;
     correct[6]  = -1; correct[7]  = -1; correct[8]  = -1; correct[9]  = -1; correct[10] = -1; correct[11] = -1;
