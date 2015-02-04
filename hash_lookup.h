@@ -63,7 +63,9 @@ hash_lookup hashlookup_build(char *key_string, int *values, int num) {
             id = cmph_search(lookup.hash, key, 1);
             lookup.keys[id] = key_string[i];
             lookup.values[id] = values[i];
+            free(keys[i]);
         }
+        free(keys);
     } else if (num == 1) {
         lookup.keys = malloc(sizeof(char));
         lookup.keys[0] = key_string[0];
