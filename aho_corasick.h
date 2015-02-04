@@ -1,6 +1,7 @@
 #ifndef __AHO_CORASICK__
 #define __AHO_CORASICK__
 #include <stdlib.h>
+#include "hash_lookup.h"
 
 typedef struct state_queue_item_t {
     struct state_queue_item_t *next;
@@ -65,9 +66,7 @@ typedef struct ac_state_t {
     char ***matches;
     int **length;
     int *num_matches;
-    int *num_moves;
-    int **next_move;
-    char **move_keys;
+    hash_lookup *lookup;
     int state;
 } *ac_state;
 
@@ -77,14 +76,6 @@ int get_child(int *num_children, int **children, char **child_keys, int state, c
         if (child_keys[state][i] == key) return children[state][i];
     }
     return -1;
-}
-
-int next_move(ac_state automata, int state, char key) {
-    int i;
-    for (i = 0; i < automata->num_moves[state]; i++) {
-        if (automata->move_keys[state][i] == key) return automata->next_move[state][i];
-    }
-    return 0;
 }
 
 ac_state ac_build(char **P, int *m, int num_patterns) {
@@ -168,64 +159,73 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
     }
 
     int k, add;
-    build->num_moves = malloc(sizeof(int) * num_nodes);
-    build->next_move = malloc(sizeof(int*) * num_nodes);
-    build->move_keys = malloc(sizeof(char*) * num_nodes);
-    build->num_moves[0] = num_children[0];
-    build->next_move[0] = malloc(sizeof(int) * num_children[0]);
-    build->move_keys[0] = malloc(sizeof(char) * num_children[0]);
+    int *num_moves = malloc(sizeof(int) * num_nodes);
+    int **next_move = malloc(sizeof(int*) * num_nodes);
+    char **move_keys = malloc(sizeof(char*) * num_nodes);
+    num_moves[0] = num_children[0];
+    next_move[0] = malloc(sizeof(int) * num_children[0]);
+    move_keys[0] = malloc(sizeof(char) * num_children[0]);
     for (i = 0; i < num_children[0]; i++) {
         push(queue, children[0][i]);
-        build->next_move[0][i] = children[0][i];
-        build->move_keys[0][i] = child_keys[0][i];
+        next_move[0][i] = children[0][i];
+        move_keys[0][i] = child_keys[0][i];
     }
     while (queue->size) {
         i = pop(queue);
-        build->num_moves[i] = num_children[i];
-        build->next_move[i] = malloc(sizeof(int) * num_children[i]);
-        build->move_keys[i] = malloc(sizeof(char) * num_children[i]);
+        num_moves[i] = num_children[i];
+        next_move[i] = malloc(sizeof(int) * num_children[i]);
+        move_keys[i] = malloc(sizeof(char) * num_children[i]);
         for (j = 0; j < num_children[i]; j++) {
             push(queue, children[i][j]);
-            build->next_move[i][j] = children[i][j];
-            build->move_keys[i][j] = child_keys[i][j];
+            next_move[i][j] = children[i][j];
+            move_keys[i][j] = child_keys[i][j];
         }
         state = failure[i];
-        for (j = 0; j < build->num_moves[state]; j++) {
+        for (j = 0; j < num_moves[state]; j++) {
             add = 1;
             for (k = 0; k < num_children[i]; k++) {
-                if (child_keys[i][k] == build->move_keys[state][j]) {
+                if (child_keys[i][k] == move_keys[state][j]) {
                     add = 0;
                     break;
                 }
             }
             if (add) {
-                build->num_moves[i]++;
-                build->next_move[i] = realloc(build->next_move[i], sizeof(int) * build->num_moves[i]);
-                build->next_move[i][build->num_moves[i] - 1] = build->next_move[state][j];
-                build->move_keys[i] = realloc(build->move_keys[i], sizeof(char) * build->num_moves[i]);
-                build->move_keys[i][build->num_moves[i] - 1] = build->move_keys[state][j];
+                num_moves[i]++;
+                next_move[i] = realloc(next_move[i], sizeof(int) * num_moves[i]);
+                next_move[i][num_moves[i] - 1] = next_move[state][j];
+                move_keys[i] = realloc(move_keys[i], sizeof(char) * num_moves[i]);
+                move_keys[i][num_moves[i] - 1] = move_keys[state][j];
             }
         }
     }
     queue_free(queue);
 
+    build->lookup = malloc(sizeof(hash_lookup) * num_nodes);
     free(failure);
     for (i = 0; i < num_nodes; i++) {
+        build->lookup[i] = hashlookup_build(move_keys[i], next_move[i], num_moves[i]);
         if (num_children[i]) {
             free(children[i]);
             free(child_keys[i]);
+        }
+        if (num_moves[i]) {
+            free(move_keys[i]);
+            free(next_move[i]);
         }
     }
     free(num_children);
     free(children);
     free(child_keys);
+    free(num_moves);
+    free(move_keys);
+    free(next_move);
 
     return build;
 }
 
 void ac_stream(ac_state automata, char T_j, int j, ac_result result) {
     result->j = -1;
-    int state = next_move(automata, automata->state, T_j);
+    int state = hashlookup_search(automata->lookup[automata->state], T_j);
     if (automata->num_matches[state]) {
         result->j = j;
         result->num_matches = automata->num_matches[state];
@@ -238,10 +238,7 @@ void ac_stream(ac_state automata, char T_j, int j, ac_result result) {
 void ac_free(ac_state state) {
     int i, j;
     for (i = 0; i < state->num_nodes; i++) {
-        if (state->num_moves[i]) {
-            free(state->next_move[i]);
-            free(state->move_keys[i]);
-        }
+        hashlookup_free(&state->lookup[i]);
         for (j = 0; j < state->num_matches[i]; j++) {
             free(state->matches[i][j]);
         }
@@ -250,11 +247,9 @@ void ac_free(ac_state state) {
             free(state->length[i]);
         }
     }
+    free(state->lookup);
     free(state->num_matches);
     free(state->matches);
-    free(state->num_moves);
-    free(state->next_move);
-    free(state->move_keys);
     free(state);
 }
 

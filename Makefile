@@ -1,7 +1,7 @@
 CMPHLIB=-L/usr/local/lib/libcmph.la -lcmph
 
 all:
-	gcc -O3 -Wall -o aho_corasick aho_corasick.c
+	gcc -O3 -Wall -o aho_corasick aho_corasick.c $(CMPHLIB)
 
 clean:
 	rm aho_corasick
