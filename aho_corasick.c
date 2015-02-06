@@ -4,6 +4,18 @@
 #include <string.h>
 #include <assert.h>
 
+int num_patterns, n, *m, *correct;
+char **P;
+
+void build_up() {
+    int i;
+    P = malloc(sizeof(char*) * num_patterns);
+    for (i = 0; i < num_patterns; i++) {
+        P[i] = malloc(sizeof(char) * (m[i] + 1));
+    }
+    correct = malloc(sizeof(int) * n);
+}
+
 void stream_test(char *T, int n, char **P, int *m, int num_patterns, int *correct) {
     ac_state state = ac_build(P, m, num_patterns);
     ac_result result = ac_result_build();
@@ -16,53 +28,54 @@ void stream_test(char *T, int n, char **P, int *m, int num_patterns, int *correc
     ac_result_free(result);
 }
 
+void tear_down() {
+    int i;
+    for (i = 0; i < num_patterns; i++) {
+        free(P[i]);
+    }
+    free(P);
+    free(m);
+    free(correct);
+}
+
 int main(void) {
-    int n = 30, *m = malloc(sizeof(int));
+    num_patterns = 1;
+    n = 30;
+    m = malloc(sizeof(int) * num_patterns);
     m[0] = 5;
-    int *correct = malloc(n * sizeof(int));
-    correct[0] = 8; correct[1] = 13;
-    correct = realloc(correct, n * sizeof(int));
+    build_up();
+    strcpy(P[0], "ababb");
     correct[0]  = -1; correct[1]  = -1; correct[2]  = -1; correct[3]  = -1; correct[4]  = -1; correct[5]  = -1;
     correct[6]  = -1; correct[7]  = -1; correct[8]  = -1; correct[9]  = -1; correct[10] = -1; correct[11] = -1;
     correct[12] = 12; correct[13] = -1; correct[14] = -1; correct[15] = -1; correct[16] = -1; correct[17] = 17;
     correct[18] = -1; correct[19] = -1; correct[20] = -1; correct[21] = -1; correct[22] = -1; correct[23] = -1;
     correct[24] = -1; correct[25] = -1; correct[26] = -1; correct[27] = -1; correct[28] = -1; correct[29] = 29;
-    char **P = malloc(sizeof(char*));
-    P[0] = malloc(sizeof(char) * m[0]);
+    stream_test("ababaabbababbababbaaababaababb", n, P, m, num_patterns, correct);
+    tear_down();
+
+    num_patterns = 2;
+    m = malloc(sizeof(int) * num_patterns);
+    m[0] = 5; m[1] = 8;
+    build_up();
     strcpy(P[0], "ababb");
-    stream_test("ababaabbababbababbaaababaababb", n, P, m, 1, correct);
-    m = realloc(m, sizeof(int) * 2);
-    P = realloc(P, sizeof(char*) * 2);
-    m[1] = 8;
-    P[1] = malloc(sizeof(char) * (m[1] + 1));
     strcpy(P[1], "ababaabb");
     correct[0]  = -1; correct[1]  = -1; correct[2]  = -1; correct[3]  = -1; correct[4]  = -1; correct[5]  = -1;
     correct[6]  = -1; correct[7]  = 7; correct[8]  = -1; correct[9]  = -1; correct[10] = -1; correct[11] = -1;
     correct[12] = 12; correct[13] = -1; correct[14] = -1; correct[15] = -1; correct[16] = -1; correct[17] = 17;
     correct[18] = -1; correct[19] = -1; correct[20] = -1; correct[21] = -1; correct[22] = -1; correct[23] = -1;
     correct[24] = -1; correct[25] = -1; correct[26] = -1; correct[27] = -1; correct[28] = -1; correct[29] = 29;
-    stream_test("ababaabbababbababbaaababaababb", n, P, m, 2, correct);
-
-    int i;
-    for (i = 0; i < 2; i++) {
-        free(P[i]);
-    }
-    free(P);
-    free(m);
-    free(correct);
+    stream_test("ababaabbababbababbaaababaababb", n, P, m, num_patterns, correct);
+    tear_down();
 
     n = 46;
-    m = malloc(sizeof(int) * 4);
+    num_patterns = 4;
+    m = malloc(sizeof(int) * num_patterns);
     m[0] = 4; m[1] = 4; m[2] = 4; m[3] = 2;
-    P = malloc(sizeof(char*) * 4);
-    for (i = 0; i < 4; i++) {
-        P[i] = malloc(sizeof(char) * (m[i] + 1));
-    }
+    build_up();
     strcpy(P[0], "take");
     strcpy(P[1], "fast");
     strcpy(P[2], "sofa");
     strcpy(P[3], "so");
-    correct = malloc(sizeof(int) * n);
     correct[0]  = -1; correct[1]  = -1; correct[2]  = -1; correct[3]  = 3; correct[4]  = -1; correct[5]  = 5;
     correct[6]  = -1; correct[7]  = -1; correct[8]  = -1; correct[9]  = -1; correct[10] = 10; correct[11] = -1;
     correct[12] = 12; correct[13] = -1; correct[14] = 14; correct[15] = -1; correct[16] = -1; correct[17] = -1;
@@ -71,8 +84,25 @@ int main(void) {
     correct[30] = -1; correct[31] = -1; correct[32] = 32; correct[33] = -1; correct[34] = -1; correct[35] = 35;
     correct[36] = -1; correct[37] = 37; correct[38] = -1; correct[39] = 39; correct[40] = -1; correct[41] = -1;
     correct[42] = 42; correct[43] = -1; correct[44] = -1; correct[45] = 45;
-    stream_test("takeso fasofast fassofatake sosso sofastake so", n, P, m, 4, correct);
-    free(correct);
+    stream_test("takeso fasofast fassofatake sosso sofastake so", n, P, m, num_patterns, correct);
+    tear_down();
+
+    n = 6;
+    num_patterns = 7;
+    m = malloc(sizeof(int) * num_patterns);
+    m[0] = 1; m[1] = 2; m[2] = 3; m[3] = 2; m[4] = 3; m[5] = 1; m[6] = 3;
+    build_up();
+    strcpy(P[0], "a");
+    strcpy(P[1], "ab");
+    strcpy(P[2], "bab");
+    strcpy(P[3], "bc");
+    strcpy(P[4], "bca");
+    strcpy(P[5], "c");
+    strcpy(P[6], "caa");
+    correct[0]  = 0; correct[1]  = 1; correct[2]  = 2; correct[3]  = 3; correct[4]  = -1; correct[5]  = 5;
+    stream_test("abccab", n, P, m, num_patterns, correct);
+    tear_down();
+
     printf("All tests succeeded!\n");
     return 0;
 }
