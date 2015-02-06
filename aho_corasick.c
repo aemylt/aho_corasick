@@ -38,7 +38,7 @@ void tear_down() {
     free(correct);
 }
 
-int main(void) {
+void test_one_pattern() {
     num_patterns = 1;
     n = 30;
     m = malloc(sizeof(int) * num_patterns);
@@ -52,7 +52,9 @@ int main(void) {
     correct[24] = -1; correct[25] = -1; correct[26] = -1; correct[27] = -1; correct[28] = -1; correct[29] = 29;
     stream_test("ababaabbababbababbaaababaababb", n, P, m, num_patterns, correct);
     tear_down();
+}
 
+void test_two_patterns() {
     num_patterns = 2;
     m = malloc(sizeof(int) * num_patterns);
     m[0] = 5; m[1] = 8;
@@ -66,7 +68,9 @@ int main(void) {
     correct[24] = -1; correct[25] = -1; correct[26] = -1; correct[27] = -1; correct[28] = -1; correct[29] = 29;
     stream_test("ababaabbababbababbaaababaababb", n, P, m, num_patterns, correct);
     tear_down();
+}
 
+void test_four_patterns() {
     n = 46;
     num_patterns = 4;
     m = malloc(sizeof(int) * num_patterns);
@@ -86,7 +90,9 @@ int main(void) {
     correct[42] = 42; correct[43] = -1; correct[44] = -1; correct[45] = 45;
     stream_test("takeso fasofast fassofatake sosso sofastake so", n, P, m, num_patterns, correct);
     tear_down();
+}
 
+void test_seven_patterns() {
     n = 6;
     num_patterns = 7;
     m = malloc(sizeof(int) * num_patterns);
@@ -102,7 +108,13 @@ int main(void) {
     correct[0]  = 0; correct[1]  = 1; correct[2]  = 2; correct[3]  = 3; correct[4]  = -1; correct[5]  = 5;
     stream_test("abccab", n, P, m, num_patterns, correct);
     tear_down();
+}
 
+int main(void) {
+    test_one_pattern();
+    test_two_patterns();
+    test_four_patterns();
+    test_seven_patterns();
     printf("All tests succeeded!\n");
     return 0;
 }
