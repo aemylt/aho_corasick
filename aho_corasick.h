@@ -46,26 +46,9 @@ void queue_free(state_queue queue) {
     free(queue);
 }
 
-typedef struct ac_result_t {
-    char **output;
-    int *m;
-    int num_matches;
-    int j;
-} *ac_result;
-
-ac_result ac_result_build() {
-    return malloc(sizeof(struct ac_result_t));
-}
-
-void ac_result_free(ac_result result) {
-    free(result);
-}
-
 typedef struct ac_state_t {
     int num_nodes;
-    char ***matches;
-    int **length;
-    int *num_matches;
+    int *has_match;
     hash_lookup *lookup;
     int state;
 } *ac_state;
@@ -88,12 +71,8 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
     children[0] = NULL;
     char **child_keys = malloc(sizeof(char*));
     child_keys[0] = NULL;
-    build->num_matches = malloc(sizeof(int*));
-    build->num_matches[0] = 0;
-    build->matches = malloc(sizeof(char**));
-    build->matches[0] = NULL;
-    build->length = malloc(sizeof(int*));
-    build->length[0] = NULL;
+    build->has_match = malloc(sizeof(int*));
+    build->has_match[0] = 0;
 
     int i, j, state, next;
     for (i = 0; i < num_patterns; i++) {
@@ -112,12 +91,8 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
             children[num_nodes - 1] = NULL;
             child_keys = realloc(child_keys, sizeof(char*) * num_nodes);
             child_keys[num_nodes - 1] = NULL;
-            build->num_matches = realloc(build->num_matches, sizeof(int*) * num_nodes);
-            build->num_matches[num_nodes - 1] = 0;
-            build->matches = realloc(build->matches, sizeof(char**) * num_nodes);
-            build->matches[num_nodes - 1] = NULL;
-            build->length = realloc(build->length, sizeof(int*) * num_nodes);
-            build->length[num_nodes - 1] = NULL;
+            build->has_match = realloc(build->has_match, sizeof(int*) * num_nodes);
+            build->has_match[num_nodes - 1] = 0;
 
             num_children[state]++;
             children[state] = realloc(children[state], sizeof(int) * num_children[state]);
@@ -126,14 +101,7 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
             child_keys[state][num_children[state] - 1] = P[i][j];
             state = num_nodes - 1;
         }
-        build->num_matches[state] = 1;
-        build->length[state] = malloc(sizeof(int));
-        build->length[state][0] = m[i];
-        build->matches[state] = malloc(sizeof(char*));
-        build->matches[state][0] = malloc(sizeof(char) * m[i]);
-        for (j = 0; j < m[i]; j++) {
-            build->matches[state][0][j] = P[i][j];
-        }
+        build->has_match[state] = 1;
     }
     build->num_nodes = num_nodes;
 
@@ -155,6 +123,7 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
             }
             if (next != -1) state = next;
             failure[children[i][j]] = state;
+            build->has_match[children[i][j]] |= build->has_match[failure[children[i][j]]];
         }
     }
 
@@ -223,33 +192,23 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
     return build;
 }
 
-void ac_stream(ac_state automata, char T_j, int j, ac_result result) {
-    result->j = -1;
+int ac_stream(ac_state automata, char T_j, int j) {
+    int result = -1;
     int state = hashlookup_search(automata->lookup[automata->state], T_j);
-    if (automata->num_matches[state]) {
-        result->j = j;
-        result->num_matches = automata->num_matches[state];
-        result->output = automata->matches[state];
-        result->m = automata->length[state];
+    if (automata->has_match[state]) {
+        result = j;
     }
     automata->state = state;
+    return result;
 }
 
 void ac_free(ac_state state) {
-    int i, j;
+    int i;
     for (i = 0; i < state->num_nodes; i++) {
         hashlookup_free(&state->lookup[i]);
-        for (j = 0; j < state->num_matches[i]; j++) {
-            free(state->matches[i][j]);
-        }
-        if (state->num_matches[i]) {
-            free(state->matches[i]);
-            free(state->length[i]);
-        }
     }
     free(state->lookup);
-    free(state->num_matches);
-    free(state->matches);
+    free(state->has_match);
     free(state);
 }
 

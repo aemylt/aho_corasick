@@ -18,14 +18,11 @@ void build_up() {
 
 void stream_test(char *T, int n, char **P, int *m, int num_patterns, int *correct) {
     ac_state state = ac_build(P, m, num_patterns);
-    ac_result result = ac_result_build();
     int j;
     for (j = 0; j < n; j++) {
-        ac_stream(state, T[j], j, result);
-        assert(correct[j] == result->j);
+        assert(correct[j] == ac_stream(state, T[j], j));
     }
     ac_free(state);
-    ac_result_free(result);
 }
 
 void tear_down() {
@@ -105,7 +102,7 @@ void test_seven_patterns() {
     strcpy(P[4], "bca");
     strcpy(P[5], "c");
     strcpy(P[6], "caa");
-    correct[0]  = 0; correct[1]  = 1; correct[2]  = 2; correct[3]  = 3; correct[4]  = -1; correct[5]  = 5;
+    correct[0]  = 0; correct[1]  = 1; correct[2]  = 2; correct[3]  = 3; correct[4]  = 4; correct[5]  = 5;
     stream_test("abccab", n, P, m, num_patterns, correct);
     tear_down();
 }
