@@ -107,4 +107,12 @@ void hashlookup_free(hash_lookup *lookup) {
     }
 }
 
+int hashlookup_size(hash_lookup lookup) {
+    int size = sizeof(hash_lookup) + (sizeof(char) + sizeof(int)) * lookup.num;
+    if (lookup.num > 1) {
+        size += cmph_packed_size(lookup.hash);
+    }
+    return size;
+}
+
 #endif

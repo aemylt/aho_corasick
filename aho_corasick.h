@@ -212,4 +212,13 @@ void ac_free(ac_state state) {
     free(state);
 }
 
+int ac_size(ac_state state) {
+    int size = sizeof(ac_state) + sizeof(struct ac_state_t) + sizeof(int) * state->num_nodes;
+    int i;
+    for (i = 0; i < state->num_nodes; i++) {
+        size += hashlookup_size(state->lookup[i]);
+    }
+    return size;
+}
+
 #endif
