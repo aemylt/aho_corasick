@@ -83,15 +83,15 @@ ac_state ac_build(char **P, int *m, int num_patterns) {
             state = next;
             next = get_child(num_children, children, child_keys, state, P[i][++j]);
         }
+        num_children = realloc(num_children, sizeof(int) * (num_nodes + m[i] - j));
+        children = realloc(children, sizeof(int*) * (num_nodes + m[i] - j));
+        child_keys = realloc(child_keys, sizeof(char*) * (num_nodes + m[i] - j));
+        build->has_match = realloc(build->has_match, sizeof(int*) * (num_nodes + m[i] - j));
         for (; j < m[i]; j++) {
             num_nodes++;
-            num_children = realloc(num_children, sizeof(int) * num_nodes);
             num_children[num_nodes - 1] = 0;
-            children = realloc(children, sizeof(int*) * num_nodes);
             children[num_nodes - 1] = NULL;
-            child_keys = realloc(child_keys, sizeof(char*) * num_nodes);
             child_keys[num_nodes - 1] = NULL;
-            build->has_match = realloc(build->has_match, sizeof(int*) * num_nodes);
             build->has_match[num_nodes - 1] = 0;
 
             num_children[state]++;
